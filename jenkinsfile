@@ -35,13 +35,11 @@ pipeline {
                 }
             }
         }
-       environment {
-        SONARQUBE_URL = 'http://sonarqube.sonarqube.svc.cluster.local:9000'
-    }
+       
    stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('MySonarQubeServer') { // Name of the SonarQube server configuration
-                    sh 'sonar-scanner -Dsonar.projectKey=my-project -Dsonar.sources=src -Dsonar.host.url=$SONARQUBE_URL'
+                    sh 'sonar-scanner -Dsonar.projectKey=my-project -Dsonar.sources=src -Dsonar.host.url=http://sonarqube.sonarqube.svc.cluster.local:9000'
                 }
             }
         }
