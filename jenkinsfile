@@ -38,7 +38,7 @@ pipeline {
        
    stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('MySonarQubeServer') { // Name of the SonarQube server configuration
+                withSonarQubeEnv('sonar') { // Name of the SonarQube server configuration
                     sh 'sonar-scanner -Dsonar.projectKey=my-project -Dsonar.sources=src -Dsonar.host.url=http://sonarqube.sonarqube.svc.cluster.local:9000'
                 }
             }
