@@ -10,7 +10,7 @@ pipeline {
                 image: jenkins/inbound-agent
                 args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
               - name: maven
-                image: maven:3.6.3-jdk-11
+                image: maven:3.8.4-openjdk-17
                 command:
                 - cat
                 tty: true
