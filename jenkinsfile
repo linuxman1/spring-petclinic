@@ -36,10 +36,10 @@ pipeline {
             }
         }
        
-   stage('SonarQube Analysis') {
+ stage('Static Code Analysis') {
             steps {
-                withSonarQubeEnv('sonar') { // Name of the SonarQube server configuration
-                    sh 'sonar-scanner -Dsonar.projectKey=my-project -Dsonar.sources=src -Dsonar.host.url=http://my-sonar-sonarqube.sonarqube.svc.cluster.local:9000'
+                container('sonar-scanner') {
+                    sh 'sonar-scanner'
                 }
             }
         }
