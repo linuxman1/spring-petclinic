@@ -35,10 +35,13 @@ pipeline {
                 }
             }
         }
-        stage('Static Code Analysis') {
+       environment {
+        SONARQUBE_URL = 'http://sonarqube.sonarqube.svc.cluster.local:9000'
+    }
+   stage('SonarQube Analysis') {
             steps {
-                container('sonar-scanner') {
-                    sh 'sonar-scanner'
+                withSonarQubeEnv('MySonarQubeServer') { // Name of the SonarQube server configuration
+                    sh 'sonar-scanner -Dsonar.projectKey=my-project -Dsonar.sources=src -Dsonar.host.url=$SONARQUBE_URL'
                 }
             }
         }
