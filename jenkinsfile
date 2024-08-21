@@ -34,10 +34,14 @@ pipeline {
             }
         }
         
-        stage('Build with Maven') {
+        stage('Build with Maven Wrapper') {
             steps {
                 container('maven') {
-                    sh 'mvn clean package -DskipTests'
+                    sh '''
+                    cd spring-petclinic
+                    chmod +x mvnw
+                    ./mvnw package
+                    '''
                 }
             }
         }
@@ -46,6 +50,7 @@ pipeline {
             steps {
                 container('docker') {
                     sh '''
+                    cd spring-petclinic
                     docker build -t spring-petclinic:${BUILD_NUMBER} .
                     '''
                 }
