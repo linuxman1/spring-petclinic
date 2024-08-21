@@ -2,7 +2,7 @@ FROM openjdk:11-jre-slim
 
 WORKDIR /app
 
-COPY target/*.jar app.jar
+COPY spring-petclinic/target/*.jar app.jar
 
 EXPOSE 8080
 
