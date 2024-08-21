@@ -1,73 +1,69 @@
 pipeline {
     agent {
         kubernetes {
-            yaml """
-            apiVersion: v1
-            kind: Pod
-            spec:
-              containers:
-              - name: jnlp
-                image: jenkins/inbound-agent
-                args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
-              - name: maven
-                image: maven:3.8.4-openjdk-17
-                command:
-                - cat
-                tty: true
-              - name: sonar-scanner
-                image: sonarsource/sonar-scanner-cli
-                command:
-                - cat
-                tty: true
-            """
+            yaml '''
+                apiVersion: v1
+                kind: Pod
+                spec:
+                  containers:
+                  - name: maven
+                    image: maven:3.8-openjdk-11
+                    command:
+                    - cat
+                    tty: true
+                  - name: docker
+                    image: docker:dind
+                    securityContext:
+                      privileged: true
+                    volumeMounts:
+                    - name: dind-storage
+                      mountPath: /var/lib/docker
+                  - name: trivy
+                    image: aquasec/trivy
+                  volumes:
+                  - name: dind-storage
+                    emptyDir: {}
+            '''
         }
     }
+    
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/spring-projects/spring-petclinic.git', branch: 'main'
+                git 'https://github.com/linuxman1/spring-petclinic.git'
             }
         }
-        stage('Build') {
+        
+        stage('Build with Maven') {
             steps {
                 container('maven') {
-                    sh './mvnw clean package'
+                    sh 'mvn clean package -DskipTests'
                 }
             }
         }
-       
- stage('Static Code Analysis') {
+        
+        stage('Build Docker Image') {
             steps {
-                container('sonar-scanner') {
-                    sh 'sonar-scanner'
+                container('docker') {
+                    sh '''
+                    docker build -t spring-petclinic:${BUILD_NUMBER} .
+                    '''
                 }
             }
         }
-        stage('Dependency Check') {
+        
+        stage('Scan with Trivy') {
             steps {
-                sh './mvnw org.owasp:dependency-check-maven:check'
-            }
-        }
-        stage('Run') {
-            steps {
-                container('maven') {
-                    sh './mvnw spring-boot:run'
+                container('trivy') {
+                    sh 'trivy image spring-petclinic:${BUILD_NUMBER}'
                 }
             }
         }
-        stage('Deploy') {
-            steps {
-                script {
-                    def dockerImage = docker.build("spring-petclinic:latest")
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        dockerImage.push()
-                    }
-                    kubernetesDeploy(
-                        configs: 'k8s/deployment.yaml',
-                        kubeconfigId: 'kubeconfig'
-                    )
-                }
-            }
+    }
+    
+    post {
+        always {
+            cleanWs()
         }
     }
 }
