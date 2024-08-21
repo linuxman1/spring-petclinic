@@ -7,22 +7,12 @@ pipeline {
                 spec:
                   containers:
                   - name: maven
-                    image: maven:3.8-openjdk-11
+                    image: maven:3.8-openjdk-17
                     command:
                     - cat
                     tty: true
-                  - name: docker
-                    image: docker:dind
-                    securityContext:
-                      privileged: true
-                    volumeMounts:
-                    - name: dind-storage
-                      mountPath: /var/lib/docker
                   - name: trivy
                     image: aquasec/trivy
-                  volumes:
-                  - name: dind-storage
-                    emptyDir: {}
             '''
         }
     }
@@ -38,7 +28,6 @@ pipeline {
             steps {
                 container('maven') {
                     sh '''
-                    cd spring-petclinic
                     chmod +x mvnw
                     ./mvnw package
                     '''
@@ -48,11 +37,8 @@ pipeline {
         
         stage('Build Docker Image') {
             steps {
-                container('docker') {
-                    sh '''
-                    cd spring-petclinic
-                    docker build -t spring-petclinic:${BUILD_NUMBER} .
-                    '''
+                container('maven') {
+                    sh './mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=spring-petclinic:${BUILD_NUMBER}'
                 }
             }
         }
@@ -68,7 +54,10 @@ pipeline {
     
     post {
         always {
-            cleanWs()
+            script {
+                // Clean up workspace
+                sh 'rm -rf ./*'
+            }
         }
     }
 }
